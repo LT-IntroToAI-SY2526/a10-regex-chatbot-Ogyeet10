@@ -1,18 +1,20 @@
-from typing import List
+from typing import List, Optional, Sequence
 
 
-def match(pattern: List[str], source: List[str]) -> List[str]:
-    """Attempt to match pattern to source
+def match(pattern: Sequence[str], source: Sequence[str]) -> Optional[List[str]]:
+    """Attempt to match pattern to source.
 
-    % matches a sequence of zero or more words and _ matches any single word
+    `%` matches a sequence of zero or more words and `_` matches any single word.
+    Matching is case-insensitive on literal tokens so users can type queries however
+    they like ("When was Grace Hopper born?" works just as well as the lowercase form).
 
     Args:
-        pattern - a pattern using to % and/or _ to extract words from the source
+        pattern - a pattern using `%` and/or `_` to extract words from the source
         source - a phrase represented as a list of words (strings)
 
     Returns:
-        None if the pattern and source do not "match" ELSE A list of matched words
-        (words in the source corresponding to _'s or %'s, in the pattern, if any)
+        None if the pattern and source do not "match" ELSE a list of matched words
+        (the source words that lined up with `_`'s or `%`'s in the pattern, in order)
     """
     sind = 0  # current index we are looking at in the source list
     pind = 0  # current index we are looking at in the pattern list
@@ -38,13 +40,18 @@ def match(pattern: List[str], source: List[str]) -> List[str]:
             else:
                 accum = ""
                 pind += 1
-                while pattern[pind] != source[sind]:
-                    accum += " " + source[sind]
-                    sind += 1
-
-                    # abort in case we've run out of source with more pattern left
+                # Consume source until the next pattern token is found,
+                # or fail if we run out of source.
+                while True:
+                    # If we've exhausted the source without finding the next token, no match
                     if sind >= len(source):
                         return None
+                    # If the next pattern token equals the current source token, stop consuming
+                    if pattern[pind].lower() == source[sind].lower():
+                        break
+                    # Otherwise, accumulate and advance through source
+                    accum += " " + source[sind]
+                    sind += 1
 
                 result.append(accum.strip())
 
@@ -60,8 +67,8 @@ def match(pattern: List[str], source: List[str]) -> List[str]:
             sind += 1
 
         # 5) check to see if the current thing in the pattern is the same as the current
-        # thing in the source
-        elif pattern[pind] == source[sind]:
+        # thing in the source (case-insensitive)
+        elif pattern[pind].lower() == source[sind].lower():
             # neither has ended and the words match, continue checking
             pind += 1
             sind += 1
